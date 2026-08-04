@@ -5,8 +5,8 @@ import { TestCase } from "../models/testCase.model.js";
 import { Problem } from "../models/problem.model.js";
 
 // 1. Create a Test Case (Admin/Setter only)
-const createTestCase = asyncHandler(async (req, res) => {
-    const { problemId, input, expectedOutput, isHidden } = req.body;
+const createTestCase = asyncHandler(async(req,res)=>{
+    const{problemId,input,expectedOutput,isHidden}=req.body;
 
     if (!problemId || !input || !expectedOutput) {
         throw new ApiError(400, "problemId, input, and expectedOutput are required");

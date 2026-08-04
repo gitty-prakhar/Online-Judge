@@ -24,12 +24,15 @@ const registerUser=asyncHandler(async (req,res)=>{
         if(!email || !username || !password){
             throw new ApiError(400,"All fields are required\n");
         }
+
         const existedUser = await User.findOne({
             $or:[{username},{email}]
         });
+
         if(existedUser){
             throw new ApiError(400,"User already exists\n");
         }
+        
         const user = await User.create({
             email,
             password,
@@ -80,7 +83,7 @@ const loginUser=asyncHandler(async (req,res)=>{
     .cookie("accessToken",accessToken,options)
     .cookie("refreshToken",refreshToken,options)
     .json(
-        new APIResponse(200,
+        new APIResp=onse(200,
             {
                 user:loggedInUser,
                 accessToken,

@@ -1,10 +1,26 @@
 import express from "express";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
+import swaggerUi from "swagger-ui-express";
+import { swaggerDocument } from "./docs/swagger.js";
 
 const app=express();
+
+// Security Middlewares
+app.use(helmet());
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    limit: 100, // limit each IP to 100 requests per windowMs
+    message: "Too many requests from this IP, please try again later"
+});
+app.use("/api", limiter);
 
 // Add these middlewares before your routes!
 app.use(express.json({limit: "16kb"}));
 app.use(express.urlencoded({extended: true, limit: "16kb"}));
+
+// Swagger Docs
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 //routes
 import userRouter from "./routes/user.route.js";

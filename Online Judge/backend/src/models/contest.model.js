@@ -7,17 +7,14 @@ const contestSchema = new mongoose.Schema(
             required:true,
             trim:true
         },
-
         startTime:{
             type:Date,
             required:true
         },
-
         endTime:{
             type:Date,
             required:true
         },
-
         problems:[
             {
                 type:mongoose.Schema.Types.ObjectId,

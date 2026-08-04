@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { verifyJWT,verifyAdmin } from "../middlewares/auth.middleware.js";
 import { 
     createProblem, 
     getAllProblems, 
@@ -15,8 +15,8 @@ router.route("/").get(getAllProblems);
 router.route("/:slug").get(getProblemBySlug);
 
 // Protected routes
-router.route("/").post(verifyJWT, createProblem);
-router.route("/:id").put(verifyJWT, updateProblem);
-router.route("/:id").delete(verifyJWT, deleteProblem);
+router.route("/").post(verifyJWT,verifyAdmin,createProblem);
+router.route("/:id").put(verifyJWT,verifyAdmin,updateProblem);
+router.route("/:id").delete(verifyJWT,verifyAdmin,deleteProblem);
 
 export default router;
