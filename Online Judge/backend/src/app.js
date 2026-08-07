@@ -3,6 +3,7 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import swaggerUi from "swagger-ui-express";
 import { swaggerDocument } from "./docs/swagger.js";
+import cookieParser from "cookie-parser";
 
 const app=express();
 
