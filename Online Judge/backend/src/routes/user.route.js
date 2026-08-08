@@ -1,9 +1,10 @@
 import {Router} from "express";
-import { logoutUser, registerUser,loginUser, refreshAccessToken,getCurrentUser, changeCurrentPassword, forgotPassword, resetPassword } from "../controllers/user.controller.js";
+import { sendRegistrationOtp, logoutUser, registerUser,loginUser, refreshAccessToken,getCurrentUser, changeCurrentPassword, forgotPassword, resetPassword } from "../controllers/user.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 const router=Router();
 
+router.route("/send-registration-otp").post(sendRegistrationOtp);
 router.route("/register").post(registerUser);
 router.route("/login").post(loginUser);
 

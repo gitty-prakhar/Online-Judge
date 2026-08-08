@@ -10,8 +10,15 @@ import Redis from "ioredis";
 const redisSubscriber=new Redis({
     host:process.env.REDIS_HOST||'127.0.0.1',
     port:process.env.REDIS_PORT||6379,
+    lazyConnect: true,
+    enableOfflineQueue: false,
+    maxRetriesPerRequest: 3,
 });
-redisSubscriber.subscribe("submission-updates");
+redisSubscriber.on('error', (err) => console.error('[Redis SSE] connection error:', err.message));
+redisSubscriber.connect().then(() => {
+    redisSubscriber.subscribe("submission-updates");
+}).catch(err => console.error('[Redis SSE] failed to connect:', err.message));
+
 
 // 1. Submit Code
 const createSubmission = asyncHandler(async(req,res)=>{
@@ -49,7 +56,7 @@ const createSubmission = asyncHandler(async(req,res)=>{
 const getSubmissionById=asyncHandler(async(req,res)=>{
     const {id}=req.params;
 
-    const submission=awaitSubmission.findById(id)
+    const submission=await Submission.findById(id)
         .populate("problemId","title")
         .populate("userId","username");
 

@@ -3,62 +3,60 @@ import { exec } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-const __filename=fileURLToPath(import.meta.url); // convert the current file's URL to a file system path
-const __dirname=path.dirname(__filename);        // get the directory containing the current file
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
+export const executeCodeInDocker = async (language, code, input) => {
+    return new Promise((resolve, reject) => {
+        const filename = `temp_${Date.now()}`;
+        let fileExtension = '';
+        let dockerImage = '';
+        let executeCommand = '';
 
-export const executeCodeInDocker=async(language,code,input)=>{
-    return new Promise((resolve,reject)=>{
-        const filename=`temp_${Date.now()}`;
-        let fileExtension='';
-        let dockerImage='';
-        let executeCommand='';
-
-        const lang=language.toLowerCase();
-        if(lang==='python'){
-            fileExtension='.py';
-            dockerImage='python:3.9-slim';
-            executeCommand=`python /app/${filename}${fileExtension}`;
+        const lang = language.toLowerCase();
+        if (lang === 'python') {
+            fileExtension = '.py';
+            dockerImage = 'python:3.9-slim';
+            executeCommand = `python /app/${filename}${fileExtension}`;
         } 
-        else if(lang==='c++'||lang ==='cpp'){
-            fileExtension='.cpp';
-            dockerImage='gcc:latest';
-            executeCommand=`g++ /app/${filename}${fileExtension} -o /app/out && /app/out`;
+        else if (lang === 'c++' || lang === 'cpp') {
+            fileExtension = '.cpp';
+            dockerImage = 'gcc:latest';
+            executeCommand = `g++ /app/${filename}${fileExtension} -o /app/out && /app/out`;
         } 
-        else if(lang==='javascript'||lang==='js'){
-            fileExtension='.js';
-            dockerImage='node:18-slim';
-            executeCommand=`node /app/${filename}${fileExtension}`;
+        else if (lang === 'javascript' || lang === 'js') {
+            fileExtension = '.js';
+            dockerImage = 'node:18-slim';
+            executeCommand = `node /app/${filename}${fileExtension}`;
         }
-        else if(lang==='java'){
-            fileExtension='.java';
-            dockerImage='openjdk:17-slim';
-            executeCommand=`java /app/${filename}${fileExtension}`; 
+        else if (lang === 'java') {
+            fileExtension = '.java';
+            dockerImage = 'openjdk:17-slim';
+            executeCommand = `javac /app/${filename}${fileExtension} && java -cp /app ${filename}`; 
         } 
-        else{
+        else {
             return reject(new Error("Unsupported language"));
         }
 
+        const codePath = path.join(__dirname, `${filename}${fileExtension}`);
+        const inputPath = path.join(__dirname, `${filename}_input.txt`);
 
-        const codePath=path.join(__dirname,`${filename}${fileExtension}`);
-        const inputPath=path.join(__dirname,`${filename}_input.txt`);
+        fs.writeFileSync(codePath, code);
+        fs.writeFileSync(inputPath, input || "");
 
-        fs.writeFileSync(codePath,code);
-        fs.writeFileSync(inputPath,input||"");
+        const dockerCmd = `docker run --rm --network none -m 256m -v "${__dirname}:/app" -i ${dockerImage} /bin/bash -c "${executeCommand}" < "${inputPath}"`;
 
-        const dockerCmd=`docker run --rm --network none -m 256m -v "${__dirname}:/app" -i ${dockerImage} /bin/bash -c "${executeCommand}" < "${inputPath}"`;
+        exec(dockerCmd, { timeout: 3000 }, (error, stdout, stderr) => {
+            if (fs.existsSync(codePath)) fs.unlinkSync(codePath);
+            if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
 
-        exec(dockerCmd,{timeout:3000},(error,stdout,stderr)=>{
-            if(fs.existsSync(codePath)) fs.unlinkSync(codePath);
-            if(fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
-
-            if(error){
-                if(error.killed){
-                    return resolve({verdict:"Time Limit Exceeded",output:""});
+            if (error) {
+                if (error.killed) {
+                    return resolve({ verdict: "Time Limit Exceeded", output: "" });
                 }
-                return resolve({verdict:"Runtime Error",output:stderr||error.message });
+                return resolve({ verdict: "Runtime Error", output: stderr || error.message });
             }
-            return resolve({verdict:"Success",output:stdout.trim()});
+            return resolve({ verdict: "Success", output: (stdout || "").trim() });
         });
     });
 };

@@ -4,6 +4,18 @@ import { Submission } from '../models/submission.model.js';
 import { TestCase } from '../models/testCase.model.js';
 import { executeCodeInDocker } from '../docker/executeCode.js';
 import { Profile } from '../models/userProfile.model.js';
+import connectDB from '../db/index.js';
+import dotenv from 'dotenv';
+
+dotenv.config({ path: './.env' }); // load from backend root
+
+// Connect to MongoDB
+connectDB().then(() => {
+    console.log("👷‍♂️ DB Connected. Judge Worker is ready.");
+}).catch(err => {
+    console.error("DB connection failed", err);
+    process.exit(1);
+});
 
 // Connect to Redis
 const redisConnection=new Redis({
@@ -47,6 +59,11 @@ const judgeWorker = new Worker('judgeQueue',async(job)=>{
         }
 
         submission.verdict = finalVerdict;
+        await Profile.findOneAndUpdate(
+            { user: submission.userId },
+            { $addToSet: { attemptedProblems: submission.problemId } },
+            { upsert: true }
+        );
         await submission.save();
         
         await redisConnection.publish('submission-updates',JSON.stringify({submissionId,verdict:finalVerdict }));

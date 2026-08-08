@@ -4,10 +4,45 @@ import { User } from "../models/user.model.js";
 import { APIResponse } from "../utils/apiResponse.js";
 import { sendEmail } from "../utils/sendEmail.js";
 import jwt from "jsonwebtoken";
+import Redis from "ioredis";
+
+const redis = new Redis({
+    host: process.env.REDIS_HOST || '127.0.0.1',
+    port: process.env.REDIS_PORT || 6379,
+});
+
+export const sendRegistrationOtp = asyncHandler(async (req, res) => {
+    const { email, username } = req.body;
+    if (!email || !username) {
+        throw new ApiError(400, "Email and username are required");
+    }
+
+    const existedUser = await User.findOne({ $or: [{ username }, { email }] });
+    if (existedUser) {
+        throw new ApiError(400, "User already exists");
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    await redis.set(`registration_otp:${email}`, otp, 'EX', 15 * 60);
+
+    const message = `Welcome to CodeJudge! Your registration OTP is: ${otp}. It is valid for 15 minutes.`;
+    try {
+        await sendEmail({
+            email,
+            subject: "CodeJudge Registration OTP",
+            message
+        });
+        return res.status(200).json(new APIResponse(200, {}, "Registration OTP sent to email"));
+    } catch (error) {
+        console.error("Email send error:", error);
+        throw new ApiError(500, "Failed to send email. Please check server logs.");
+    }
+});
 
 const generateAccessAndRefreshTokens=async(userId)=>{
     try{
-        const user = await User.findById(userId);
+        const user = await User.findById(userId).select("+refreshToken");
+        if(!user) throw new Error("User not found during token generation");
         const accessToken = user.generateAccessToken();
         const refreshToken = user.generateRefreshToken();
         user.refreshToken=refreshToken;
@@ -15,14 +50,20 @@ const generateAccessAndRefreshTokens=async(userId)=>{
         return {accessToken,refreshToken};
     }
     catch(error){
-        throw new ApiError(500,"Something went wrong while generating refresh and access token")
+        console.error("Token generation error:", error.message);
+        throw new ApiError(500,`Token generation failed: ${error.message}`);
     }
 }
 
 const registerUser=asyncHandler(async (req,res)=>{
-        const {email,username,password}=req.body;
-        if(!email || !username || !password){
-            throw new ApiError(400,"All fields are required\n");
+        const {email,username,password,adminSecret,otp}=req.body;
+        if(!email || !username || !password || !otp){
+            throw new ApiError(400,"All fields and OTP are required\n");
+        }
+
+        const storedOtp = await redis.get(`registration_otp:${email}`);
+        if (!storedOtp || storedOtp !== otp) {
+            throw new ApiError(400, "Invalid or expired OTP");
         }
 
         const existedUser = await User.findOne({
@@ -33,11 +74,19 @@ const registerUser=asyncHandler(async (req,res)=>{
             throw new ApiError(400,"User already exists\n");
         }
         
+        let assignedRole = "user";
+        if (adminSecret && adminSecret === process.env.ADMIN_SECRET) {
+            assignedRole = "admin";
+        }
+        
         const user = await User.create({
             email,
             password,
-            username:username.toLowerCase()
-        })
+            username:username.toLowerCase(),
+            role: assignedRole
+        });
+
+        await redis.del(`registration_otp:${email}`);
 
         const createdUser=await User.findById(user._id).select("-password -refreshToken");
 
@@ -52,13 +101,13 @@ const registerUser=asyncHandler(async (req,res)=>{
 
 
 const loginUser=asyncHandler(async (req,res)=>{
-    const {username,email,password}= req.body;
-    if(!email && !username){
+    const {identifier,password}= req.body;
+    if(!identifier){
         throw new ApiError(400,"Username or email is required");
     }
 
     const user = await User.findOne({
-        $or:[{email},{username}]
+        $or:[{email: identifier},{username: identifier.toLowerCase()}]
     }).select("+password");
 
     if(!user){
@@ -83,7 +132,7 @@ const loginUser=asyncHandler(async (req,res)=>{
     .cookie("accessToken",accessToken,options)
     .cookie("refreshToken",refreshToken,options)
     .json(
-        new APIResp=onse(200,
+        new APIResponse(200,
             {
                 user:loggedInUser,
                 accessToken,

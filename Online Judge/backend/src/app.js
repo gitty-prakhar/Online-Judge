@@ -1,9 +1,11 @@
 import express from "express";
 import helmet from "helmet";
+import cors from "cors";
 import rateLimit from "express-rate-limit";
 import swaggerUi from "swagger-ui-express";
 import { swaggerDocument } from "./docs/swagger.js";
 import cookieParser from "cookie-parser";
+import { errorHandler } from "./middlewares/errorHandler.js";
 
 const app=express();
 
@@ -19,6 +21,9 @@ app.use("/api", limiter);
 // Add these middlewares before your routes!
 app.use(express.json({limit: "16kb"}));
 app.use(express.urlencoded({extended: true, limit: "16kb"}));
+
+app.use(cookieParser());
+app.use(cors({ origin: process.env.CORS_ORIGIN, credentials: true }));
 
 // Swagger Docs
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
@@ -41,5 +46,7 @@ app.use("/api/v1/profile",profileRouter);
 app.use("/api/v1/leaderboard",leaderboardRouter);
 app.use("/api/v1/contests",contestRouter);
 
+// Global Error Handler — must be last, after all routes
+app.use(errorHandler);
 
 export {app};
