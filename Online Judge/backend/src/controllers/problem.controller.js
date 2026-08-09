@@ -2,6 +2,12 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/apiError.js";
 import { APIResponse } from "../utils/apiResponse.js";
 import { Problem } from "../models/problem.model.js";
+import Redis from "ioredis";
+
+const redis = new Redis({
+    host: process.env.REDIS_HOST || '127.0.0.1',
+    port: process.env.REDIS_PORT || 6379,
+});
 
 const generateSlug=(title)=>{
     return title.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
@@ -48,6 +54,12 @@ const getAllProblems=asyncHandler(async(req,res)=>{
     const skip=(page-1)*limit;
     const {search,difficulty,tags}=req.query;
 
+    const cacheKey = `problems_page_${page}_limit_${limit}_search_${search||''}_diff_${difficulty||''}_tags_${tags||''}`;
+    const cachedData = await redis.get(cacheKey);
+    if (cachedData) {
+        return res.status(200).json(new APIResponse(200, JSON.parse(cachedData), "Problems fetched (Cached)"));
+    }
+
     let filter = {visibility: "Public"};
 
     if(search){
@@ -70,28 +82,39 @@ const getAllProblems=asyncHandler(async(req,res)=>{
     const totalProblems = await Problem.countDocuments(filter);
     const totalPages = Math.ceil(totalProblems / limit);
 
+    const responseData = {
+        problems,
+        pagination: {
+            totalProblems,
+            totalPages,
+            currentPage: page,
+            hasNextPage: page < totalPages,
+            hasPrevPage: page > 1
+        }
+    };
+
+    await redis.set(cacheKey, JSON.stringify(responseData), 'EX', 300); // 5 mins cache
+
     return res.status(200).json(
-        new APIResponse(200, {
-            problems,
-            pagination: {
-                totalProblems,
-                totalPages,
-                currentPage: page,
-                hasNextPage: page < totalPages,
-                hasPrevPage: page > 1
-            }
-        }, "Problems fetched successfully")
+        new APIResponse(200, responseData, "Problems fetched successfully")
     );
 });
 
 const getProblemBySlug=asyncHandler(async(req,res)=>{
     const {slug}=req.params;
 
+    const cachedData = await redis.get(`problem_${slug}`);
+    if (cachedData) {
+        return res.status(200).json(new APIResponse(200, JSON.parse(cachedData), "Problem fetched (Cached)"));
+    }
+
     const problem=await Problem.findOne({slug}).populate("author","username");
 
     if(!problem){
         throw new ApiError(404,"Problem not found");
     }
+
+    await redis.set(`problem_${slug}`, JSON.stringify(problem), 'EX', 300); // 5 mins cache
 
     return res.status(200).json(new APIResponse(200,problem,"Problem fetched successfully"));
 });
@@ -121,6 +144,11 @@ const updateProblem=asyncHandler(async(req,res)=>{
         { $set: updatedData },
         { new: true, runValidators: true }
     );
+    
+    if (updatedProblem) {
+        await redis.del(`problem_${updatedProblem.slug}`);
+    }
+
     return res.status(200).json(new APIResponse(200,updatedProblem,"Problem updated successfully"));
 })
 
@@ -137,6 +165,8 @@ const deleteProblem=asyncHandler(async(req,res)=>{
     // I have managed the admin access in the middleware in verifyAdmin
 
     await Problem.findByIdAndDelete(id);
+    await redis.del(`problem_${problem.slug}`);
+    
     return res.status(200).json(new APIResponse(200,{},"Problem deleted successfully"));
 });
 

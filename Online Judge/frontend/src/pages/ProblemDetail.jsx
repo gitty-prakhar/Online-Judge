@@ -41,6 +41,28 @@ export default function ProblemDetail() {
 
   useEffect(() => {
     api.get(`/problems/${slug}`).then(r => setProblem(r.data.data)).catch(() => navigate('/problems'));
+
+    // Setup Server-Sent Events (SSE) for Real-Time Updates
+    const sse = new EventSource('/api/v1/submissions/stream/updates');
+    sse.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.submissionId) {
+          setVerdict(prev => {
+            if (prev && prev.submissionId === data.submissionId) {
+              if (data.verdict !== 'Pending' && data.verdict !== 'Judging') {
+                setSubmitting(false); // Stop loading indicator
+              }
+              return { status: data.verdict, submissionId: data.submissionId };
+            }
+            return prev;
+          });
+        }
+      } catch (err) {}
+    };
+    eventSourceRef.current = sse;
+
+    return () => sse.close();
   }, [slug]);
 
   const handleLangChange = (lang) => {
@@ -60,20 +82,8 @@ export default function ProblemDetail() {
         code,
       });
       const submissionId = res.data.data._id;
+      // SSE connection will automatically handle updates for this ID
       setVerdict({ status: 'Judging...', submissionId });
-
-      // Poll for result
-      const poll = setInterval(async () => {
-        try {
-          const r = await api.get(`/submissions/${submissionId}`);
-          const v = r.data.data.verdict;
-          if (v !== 'Pending' && v !== 'Judging') {
-            setVerdict({ status: v, submissionId });
-            clearInterval(poll);
-            setSubmitting(false);
-          }
-        } catch { clearInterval(poll); setSubmitting(false); }
-      }, 2000);
     } catch (err) {
       setError(err.response?.data?.message || 'Submission failed');
       setSubmitting(false);
