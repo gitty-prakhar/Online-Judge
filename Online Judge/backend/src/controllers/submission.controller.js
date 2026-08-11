@@ -4,12 +4,10 @@ import { APIResponse } from "../utils/apiResponse.js";
 import { Submission } from "../models/submission.model.js";
 import { Problem } from "../models/problem.model.js";
 import { judgeQueue } from "../queues/judgeQueue.js";
-import Redis from "ioredis";
+import { createRedisClient } from "../utils/createRedisClient.js";
 
 // Dedicated redis client for subscribing to SSE events
-const redisSubscriber=new Redis({
-    host:process.env.REDIS_HOST||'127.0.0.1',
-    port:process.env.REDIS_PORT||6379,
+const redisSubscriber = createRedisClient({
     lazyConnect: true,
     enableOfflineQueue: false,
     maxRetriesPerRequest: 3,

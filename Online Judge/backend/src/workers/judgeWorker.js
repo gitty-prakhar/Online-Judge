@@ -1,5 +1,5 @@
 import { Worker } from 'bullmq';
-import Redis from 'ioredis';
+import { createRedisClient } from '../utils/createRedisClient.js';
 import { Submission } from '../models/submission.model.js';
 import { TestCase } from '../models/testCase.model.js';
 import { executeCodeInDocker } from '../docker/executeCode.js';
@@ -18,11 +18,7 @@ connectDB().then(() => {
 });
 
 // Connect to Redis
-const redisConnection=new Redis({
-    host:process.env.REDIS_HOST||'127.0.0.1',
-    port:process.env.REDIS_PORT||6379,
-    maxRetriesPerRequest:null
-});
+const redisConnection = createRedisClient({ maxRetriesPerRequest: null });
 
 console.log("👷‍♂️ Judge Worker is running and listening to queue...");
 

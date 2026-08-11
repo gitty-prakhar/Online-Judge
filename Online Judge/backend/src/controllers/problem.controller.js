@@ -2,12 +2,9 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/apiError.js";
 import { APIResponse } from "../utils/apiResponse.js";
 import { Problem } from "../models/problem.model.js";
-import Redis from "ioredis";
+import { createRedisClient } from "../utils/createRedisClient.js";
 
-const redis = new Redis({
-    host: process.env.REDIS_HOST || '127.0.0.1',
-    port: process.env.REDIS_PORT || 6379,
-});
+const redis = createRedisClient();
 
 const generateSlug=(title)=>{
     return title.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');

@@ -4,12 +4,9 @@ import { User } from "../models/user.model.js";
 import { APIResponse } from "../utils/apiResponse.js";
 import { sendEmail } from "../utils/sendEmail.js";
 import jwt from "jsonwebtoken";
-import Redis from "ioredis";
+import { createRedisClient } from "../utils/createRedisClient.js";
 
-const redis = new Redis({
-    host: process.env.REDIS_HOST || '127.0.0.1',
-    port: process.env.REDIS_PORT || 6379,
-});
+const redis = createRedisClient();
 
 export const sendRegistrationOtp = asyncHandler(async (req, res) => {
     const { email, username } = req.body;

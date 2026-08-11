@@ -1,11 +1,7 @@
 import { Queue } from 'bullmq';
-import Redis from 'ioredis';
+import { createRedisClient } from '../utils/createRedisClient.js';
 
-const redisConnection=new Redis({
-    host:process.env.REDIS_HOST||'127.0.0.1',
-    port:process.env.REDIS_PORT||6379,
-    maxRetriesPerRequest: null
-})
+const redisConnection = createRedisClient({ maxRetriesPerRequest: null });
 
 
 export const judgeQueue = new Queue('judgeQueue',{

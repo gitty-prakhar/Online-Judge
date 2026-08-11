@@ -1,9 +1,9 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { APIResponse } from "../utils/apiResponse.js";
 import { Profile } from "../models/userProfile.model.js";
-import Redis from "ioredis";
+import { createRedisClient } from "../utils/createRedisClient.js";
 
-const redis = new Redis({ host: process.env.REDIS_HOST || '127.0.0.1', port: process.env.REDIS_PORT || 6379 });
+const redis = createRedisClient();
 redis.on('error', (err) => console.error('[Redis Leaderboard] connection error:', err.message));
 
 
