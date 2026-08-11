@@ -82,3 +82,23 @@ const judgeWorker = new Worker('judgeQueue',async(job)=>{
         await Submission.findByIdAndUpdate(submissionId,{verdict:"INTERNAL_ERROR"});
     }
 }, { connection: redisConnection });
+
+// ---------------------------------------------------------
+// 📧 EMAIL WORKER (Bypasses Render SMTP Block)
+// ---------------------------------------------------------
+import { sendEmail } from '../utils/sendEmail.js';
+
+console.log("📧 Email Worker is running and listening to queue...");
+
+const emailWorker = new Worker('emailQueue', async (job) => {
+    const { email, subject, message } = job.data;
+    console.log(`Processing email job for: ${email}`);
+
+    try {
+        await sendEmail({ email, subject, message });
+        console.log(`Email successfully sent to ${email}`);
+    } catch (error) {
+        console.error(`Failed to send email to ${email}:`, error);
+        throw error;
+    }
+}, { connection: redisConnection });

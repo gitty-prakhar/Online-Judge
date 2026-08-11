@@ -2,7 +2,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/apiError.js";
 import { User } from "../models/user.model.js";
 import { APIResponse } from "../utils/apiResponse.js";
-import { sendEmail } from "../utils/sendEmail.js";
+import { emailQueue } from "../queues/emailQueue.js";
 import jwt from "jsonwebtoken";
 import { createRedisClient } from "../utils/createRedisClient.js";
 
@@ -24,15 +24,15 @@ export const sendRegistrationOtp = asyncHandler(async (req, res) => {
 
     const message = `Welcome to CodeJudge! Your registration OTP is: ${otp}. It is valid for 15 minutes.`;
     try {
-        await sendEmail({
+        await emailQueue.add('send-email', {
             email,
             subject: "CodeJudge Registration OTP",
             message
         });
-        return res.status(200).json(new APIResponse(200, {}, "Registration OTP sent to email"));
+        return res.status(200).json(new APIResponse(200, {}, "Registration OTP queued for delivery"));
     } catch (error) {
-        console.error("Email send error:", error);
-        throw new ApiError(500, "Failed to send email. Please check server logs.");
+        console.error("Queue add error:", error);
+        throw new ApiError(500, "Failed to queue email. Please check server logs.");
     }
 });
 
