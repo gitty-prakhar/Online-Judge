@@ -43,7 +43,8 @@ export default function ProblemDetail() {
     api.get(`/problems/${slug}`).then(r => setProblem(r.data.data)).catch(() => navigate('/problems'));
 
     // Setup Server-Sent Events (SSE) for Real-Time Updates
-    const sse = new EventSource('/api/v1/submissions/stream/updates');
+    const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
+    const sse = new EventSource(`${apiUrl}/submissions/stream/updates`);
     sse.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
