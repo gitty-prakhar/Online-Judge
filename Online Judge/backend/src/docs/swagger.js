@@ -6,7 +6,9 @@ export const swaggerDocument = {
     description:"API documentation for the Online Judge Platform"
   },
   servers:[
-    {url:"http://localhost:8000"}
+    {
+      url:"http://localhost:8000"
+    }
   ],
   paths:{
     "/api/v1/problems":{
