@@ -9,24 +9,24 @@ import { errorHandler } from "./middlewares/errorHandler.js";
 
 const app=express();
 
-// Security Middlewares
+//security Middlewares
 app.use(helmet());
-const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    limit: 100, // limit each IP to 100 requests per windowMs
-    message: "Too many requests from this IP, please try again later"
+const limiter=rateLimit({
+    windowMs:15*60*1000, //15 minutes
+    limit:100, //limit each IP to 100 requests per windowMs
+    message:"Too many requests from this IP, please try again later"
 });
-app.use("/api", limiter);
+app.use("/api",limiter);
 
-// Add these middlewares before your routes!
-app.use(express.json({limit: "16kb"}));
-app.use(express.urlencoded({extended: true, limit: "16kb"}));
+//add these middlewares before your routes
+app.use(express.json({limit:"16kb"}));
+app.use(express.urlencoded({extended:true,limit:"16kb"}));
 
 app.use(cookieParser());
-app.use(cors({ origin: process.env.CORS_ORIGIN, credentials: true }));
+app.use(cors({origin:process.env.CORS_ORIGIN,credentials:true}));
 
-// Swagger Docs
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+//swagger docs
+app.use('/api-docs',swaggerUi.serve,swaggerUi.setup(swaggerDocument));
 
 //routes
 import userRouter from "./routes/user.route.js";
@@ -46,7 +46,7 @@ app.use("/api/v1/profile",profileRouter);
 app.use("/api/v1/leaderboard",leaderboardRouter);
 app.use("/api/v1/contests",contestRouter);
 
-// Global Error Handler — must be last, after all routes
+//global error handler it must be at last after all routes
 app.use(errorHandler);
 
 export {app};
