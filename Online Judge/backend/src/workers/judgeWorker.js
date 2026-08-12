@@ -40,17 +40,17 @@ const judgeWorker=new Worker('judgeQueue',async(job)=>{
         
         let finalVerdict="Accepted";
 
-        for (let i = 0; i < testCases.length; i++){
+        for (let i=0;i<testCases.length;i++){
             const tc=testCases[i];
             
             const result=await executeCodeInDocker(submission.language,submission.code,tc.input);
 
-            if (result.verdict!=="Success") {
-                finalVerdict=result.verdict; //TLE or Runtime Error
+            if(result.verdict!=="Success"){
+                finalVerdict=result.verdict;//TLE or Runtime Error
                 break;
             }
 
-            if (result.output!==tc.expectedOutput.trim()) {
+            if(result.output!==tc.expectedOutput.trim()){
                 finalVerdict="Wrong Answer";
                 break;
             }
@@ -64,7 +64,7 @@ const judgeWorker=new Worker('judgeQueue',async(job)=>{
         );
         await submission.save();
         
-        await redisConnection.publish('submission-updates',JSON.stringify({submissionId,verdict:finalVerdict }));
+        await redisConnection.publish('submission-updates',JSON.stringify({submissionId,verdict:finalVerdict}));
 
         if (finalVerdict==="Accepted") {
             await Profile.findOneAndUpdate(
@@ -83,22 +83,23 @@ const judgeWorker=new Worker('judgeQueue',async(job)=>{
         
         await Submission.findByIdAndUpdate(submissionId,{verdict:"INTERNAL_ERROR"});
     }
-}, { connection: redisConnection });
+}, {connection:redisConnection});
 
 //email worker
 import { sendEmail } from '../utils/sendEmail.js';
 
 console.log("📧 Email Worker is running and listening to queue...");
 
-const emailWorker = new Worker('emailQueue', async (job) => {
-    const { email, subject, message } = job.data;
+const emailWorker=new Worker('emailQueue', async (job) => {
+    const{email,subject,message}=job.data;
     console.log(`Processing email job for: ${email}`);
 
-    try {
-        await sendEmail({ email, subject, message });
+    try{
+        await sendEmail({email,subject,message});
         console.log(`Email successfully sent to ${email}`);
-    } catch (error) {
-        console.error(`Failed to send email to ${email}:`, error);
+    } 
+    catch(error){
+        console.error(`Failed to send email to ${email}:`,error);
         throw error;
     }
-}, { connection: redisConnection });
+}, {connection:redisConnection});
