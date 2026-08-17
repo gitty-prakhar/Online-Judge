@@ -19,7 +19,8 @@ const getAllContests=asyncHandler(async(req,res)=>{
 });
 
 const getContestById=asyncHandler(async(req,res)=>{
-    const contest=await Contest.findById(req.params.id).populate("problems.problemId","title difficulty");
+    const{id}=req.params;
+    const contest=await Contest.findById(id).populate("problems.problemId","title difficulty");
 
     if(!contest){ 
         throw new ApiError(404,"Contest not found");
