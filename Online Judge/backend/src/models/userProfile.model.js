@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const profileSchema = new mongoose.Schema(
+const profileSchema=new mongoose.Schema(
     {
         user:{
             type:mongoose.Schema.Types.ObjectId,
@@ -51,4 +51,4 @@ const profileSchema = new mongoose.Schema(
 //here solved problems and attempted problems is an array where each element of an array is an object
 //which stores 2 things the id of problem and where to fetch that id from like from which model
 
-export const Profile = mongoose.model("Profile",profileSchema);
+export const Profile=mongoose.model("Profile",profileSchema);
