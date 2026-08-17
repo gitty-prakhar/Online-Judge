@@ -4,10 +4,10 @@ import { APIResponse } from "../utils/apiResponse.js";
 import { Problem } from "../models/problem.model.js";
 import { createRedisClient } from "../utils/createRedisClient.js";
 
-const redis = createRedisClient();
+const redis=createRedisClient();
 
 const generateSlug=(title)=>{
-    return title.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+    return title.toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)+/g,'');
 }
 
 const createProblem=asyncHandler(async(req,res)=>{
