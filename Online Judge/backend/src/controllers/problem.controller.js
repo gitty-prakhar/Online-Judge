@@ -136,13 +136,13 @@ const updateProblem=asyncHandler(async(req,res)=>{
     if (req.body.title){
         updatedData.slug=generateSlug(req.body.title);
     }
-    const updatedProblem = await Problem.findByIdAndUpdate(
+    const updatedProblem=await Problem.findByIdAndUpdate(
         id,
-        { $set: updatedData },
-        { new: true, runValidators: true }
+        {$set:updatedData},
+        {new:true,runValidators:true}
     );
     
-    if (updatedProblem) {
+    if(updatedProblem){
         await redis.del(`problem_${updatedProblem.slug}`);
     }
 
@@ -168,4 +168,4 @@ const deleteProblem=asyncHandler(async(req,res)=>{
 });
 
 
-export {createProblem,getAllProblems,getProblemBySlug,updateProblem,deleteProblem};
+export{createProblem,getAllProblems,getProblemBySlug,updateProblem,deleteProblem};
