@@ -19,11 +19,12 @@ const limiter=rateLimit({
 app.use("/api",limiter);
 
 //add these middlewares before your routes
-app.use(express.json({limit:"16kb"}));
-app.use(express.urlencoded({extended:true,limit:"16kb"}));
+app.use(express.json({limit:"16kb"})); //body is parsed in json format
+app.use(express.urlencoded({extended:true,limit:"16kb"})); //urlencoded is used for parsing form data
 
-app.use(cookieParser());
-app.use(cors({origin:process.env.CORS_ORIGIN,credentials:true}));
+app.use(cookieParser()); //to send and receive cookies
+
+app.use(cors({origin:process.env.CORS_ORIGIN,credentials:true})); //cors is used for cross-origin resource sharing
 
 //swagger docs
 app.use('/api-docs',swaggerUi.serve,swaggerUi.setup(swaggerDocument));
@@ -49,4 +50,4 @@ app.use("/api/v1/contests",contestRouter);
 //global error handler it must be at last after all routes
 app.use(errorHandler);
 
-export {app};
+export{app};

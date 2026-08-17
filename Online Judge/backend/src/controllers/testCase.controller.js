@@ -5,28 +5,28 @@ import { TestCase } from "../models/testCase.model.js";
 import { Problem } from "../models/problem.model.js";
 
 // 1. Create a Test Case (Admin/Setter only)
-const createTestCase = asyncHandler(async(req,res)=>{
+const createTestCase=asyncHandler(async(req,res)=>{
     const{problemId,input,expectedOutput,isHidden}=req.body;
 
-    if (!problemId || !input || !expectedOutput) {
-        throw new ApiError(400, "problemId, input, and expectedOutput are required");
+    if(!problemId||!input||!expectedOutput){
+        throw new ApiError(400,"problemId, input, and expectedOutput are required");
     }
 
-    // Verify problem exists and user has permission
-    const problem = await Problem.findById(problemId);
-    if (!problem) {
-        throw new ApiError(404, "Problem not found");
+    //verify problem exists and user has permission
+    const problem=await Problem.findById(problemId);
+    if(!problem){
+        throw new ApiError(404,"Problem not found");
     }
 
-    if (problem.author.toString() !== req.user._id.toString() && req.user.role !== "admin") {
+    if(problem.author.toString()!==req.user._id.toString() && req.user.role!=="admin"){
         throw new ApiError(403, "You do not have permission to add test cases to this problem");
     }
 
-    const testCase = await TestCase.create({
+    const testCase=await TestCase.create({
         problemId,
         input,
         expectedOutput,
-        isHidden: isHidden !== undefined ? isHidden : true
+        isHidden: isHidden!==undefined?isHidden:true
     });
 
     return res.status(201).json(new APIResponse(201, testCase, "Test case created successfully"));

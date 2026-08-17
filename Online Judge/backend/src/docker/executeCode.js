@@ -1,19 +1,19 @@
-import fs from 'fs';
-import { exec } from 'child_process';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import fs from 'fs';    //fs is used for file system operations
+import { exec } from 'child_process';   //exec is used to execute shell commands
+import path from 'path';    //path is used to resolve and normalize file paths
+import { fileURLToPath } from 'url';    //fileURLToPath is used to convert file URL to path
 
-const __filename=fileURLToPath(import.meta.url);
-const __dirname=path.dirname(__filename);
+const __filename=fileURLToPath(import.meta.url);  //get the file name of current module
+const __dirname=path.dirname(__filename);   //get the directory name of current module
 
 export const executeCodeInDocker=async(language,code,input)=>{
-    return new Promise((resolve,reject)=>{
-        const filename=`temp_${Date.now()}`;
-        let fileExtension='';
-        let dockerImage='';
-        let executeCommand='';
+    return new Promise((resolve,reject)=>{//promise is used to handle asynchronous operations
+        const filename=`temp_${Date.now()}`;//unique filename for each submission
+        let fileExtension=''; //file extension for the code
+        let dockerImage=''; //docker image for the language
+        let executeCommand=''; //command to execute the code
 
-        const lang=language.toLowerCase();
+        const lang=language.toLowerCase(); //convert language to lowercase
         if(lang==='python'){
             fileExtension='.py';
             dockerImage='python:3.9-slim';
@@ -35,23 +35,23 @@ export const executeCodeInDocker=async(language,code,input)=>{
             executeCommand=`javac /app/${filename}${fileExtension} && java -cp /app ${filename}`; 
         } 
         else{
-            return reject(new Error("Unsupported language"));
+            return reject(new Error("Unsupported language"));//reject if language is not supported
         }
 
-        const codePath=path.join(__dirname,`${filename}${fileExtension}`);
-        const inputPath=path.join(__dirname,`${filename}_input.txt`);
+        const codePath=path.join(__dirname,`${filename}${fileExtension}`);  //create the file path for the code
+        const inputPath=path.join(__dirname,`${filename}_input.txt`);   //create the file path for the input
 
-        fs.writeFileSync(codePath,code);
-        fs.writeFileSync(inputPath,input||"");
+        fs.writeFileSync(codePath,code);  //write the code to the file
+        fs.writeFileSync(inputPath,input||"");  //write the input to the file
 
-        const dockerCmd=`docker run --rm --network none -m 256m -v "${__dirname}:/app" -i ${dockerImage} /bin/bash -c "${executeCommand}" < "${inputPath}"`;
+        const dockerCmd=`docker run --rm --network none -m 256m -v "${__dirname}:/app" -i ${dockerImage} /bin/bash -c "${executeCommand}" < "${inputPath}"`;  //docker command to execute the code
 
         exec(dockerCmd,{timeout:3000},(error,stdout,stderr)=>{
-            if(fs.existsSync(codePath))fs.unlinkSync(codePath);
-            if(fs.existsSync(inputPath))fs.unlinkSync(inputPath);
+            if(fs.existsSync(codePath))fs.unlinkSync(codePath);   //delete the file after execution
+            if(fs.existsSync(inputPath))fs.unlinkSync(inputPath);   //delete the input file after execution
 
-            if(error){
-                if(error.killed){
+            if(error){ //handle error
+                if(error.killed){   //time limit exceeded
                     return resolve({verdict:"Time Limit Exceeded",output:""});
                 }
                 return resolve({verdict:"Runtime Error",output:stderr||error.message});

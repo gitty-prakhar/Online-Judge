@@ -40,7 +40,7 @@ const judgeWorker=new Worker('judgeQueue',async(job)=>{
         
         let finalVerdict="Accepted";
 
-        for (let i=0;i<testCases.length;i++){
+        for(let i=0;i<testCases.length;i++){
             const tc=testCases[i];
             
             const result=await executeCodeInDocker(submission.language,submission.code,tc.input);
@@ -66,9 +66,9 @@ const judgeWorker=new Worker('judgeQueue',async(job)=>{
         
         await redisConnection.publish('submission-updates',JSON.stringify({submissionId,verdict:finalVerdict}));
 
-        if (finalVerdict==="Accepted") {
+        if(finalVerdict==="Accepted"){
             await Profile.findOneAndUpdate(
-                {user: submission.userId},
+                {user:submission.userId},
                 {$addToSet:{solvedProblems:submission.problemId}},
                 {upsert:true}
             );
@@ -90,7 +90,7 @@ import { sendEmail } from '../utils/sendEmail.js';
 
 console.log("📧 Email Worker is running and listening to queue...");
 
-const emailWorker=new Worker('emailQueue', async (job) => {
+const emailWorker=new Worker('emailQueue',async(job)=>{
     const{email,subject,message}=job.data;
     console.log(`Processing email job for: ${email}`);
 

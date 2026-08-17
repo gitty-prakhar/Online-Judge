@@ -4,24 +4,17 @@ import { APIResponse } from "../utils/apiResponse.js";
 import { Contest } from "../models/contest.model.js";
 
 const createContest=asyncHandler(async(req,res)=>{
-
-    const {title,startTime,endTime,problems}=req.body;
-
-    if(!title || !startTime || !endTime){
+    const{title,startTime,endTime,problems}=req.body;
+    if(!title||!startTime||!endTime){
         throw new ApiError(400,"Missing required fields");
     }
     // if(req.user.role!=="admin")
-
     const contest=await Contest.create({title,startTime,endTime,problems});
-
     return res.status(201).json(new APIResponse(201,contest,"Contest created"));
-
 });
 
 const getAllContests=asyncHandler(async(req,res)=>{
-
     const contests=await Contest.find().sort({startTime:-1}).select("-problems");
-
     return res.status(200).json(new APIResponse(200,contests,"Contests fetched"));
 });
 
@@ -54,10 +47,8 @@ const registerForContest=asyncHandler(async(req,res)=>{
     */
 
     contest.participants.push(req.user._id);
-
     await contest.save();
-
     return res.status(200).json(new APIResponse(200,{},"Registered successfully"));
 });
 
-export {createContest,getAllContests,getContestById,registerForContest};
+export{createContest,getAllContests,getContestById,registerForContest};
